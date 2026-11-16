@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathfinding Visualizer | Interactive Graph Algorithms</title>
+    <meta name="description" content="An interactive web application for visualizing graph theory and pathfinding algorithms including A*, Dijkstra, BFS, DFS, Greedy Best-First, and Bidirectional BFS.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="pv-favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="pv-favicon.ico">
+</head>
+<body>
+
+<div class="background-grid"></div>
+
+<header>
+    <div class="logo">
+        <span class="logo-dot"></span>
+        <div>
+            <h1>Pathfinding Visualizer</h1>
+            <p>Graph Algorithms &bull; Procedural Mazes &bull; Interactive Sandbox</p>
+        </div>
+    </div>
+
+    <div class="controls-toolbar">
+        <div class="control-group">
+            <label for="algorithm" class="sr-only">Algorithm</label>
+            <select id="algorithm" aria-label="Select Pathfinding Algorithm">
+                <option value="astar">A* Search</option>
+                <option value="dijkstra">Dijkstra's Algorithm</option>
+                <option value="bfs">Breadth-First Search (BFS)</option>
+                <option value="dfs">Depth-First Search (DFS)</option>
+                <option value="greedy">Greedy Best-First Search</option>
+                <option value="bidirectional">Bidirectional BFS</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="mazeSelect" class="sr-only">Mazes and Patterns</label>
+            <select id="mazeSelect" aria-label="Generate Maze or Pattern">
+                <option value="" disabled selected>Mazes &amp; Patterns</option>
+                <option value="recursive-division">Recursive Division</option>
+                <option value="recursive-backtracker">Recursive Backtracker</option>
+                <option value="staircase">Staircase Pattern</option>
+                <option value="random">Random Obstacles</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="speedSelect" class="sr-only">Animation Speed</label>
+            <select id="speedSelect" aria-label="Animation Speed">
+                <option value="fast" selected>Speed: Fast</option>
+                <option value="normal">Speed: Normal</option>
+                <option value="slow">Speed: Slow</option>
+                <option value="instant">Speed: Instant (0ms)</option>
+            </select>
+        </div>
+
+        <div class="tool-group" role="group" aria-label="Brush Tool">
+            <button class="tool-btn active" data-tool="wall" title="Wall Tool (Q)">
+                Wall
+            </button>
+            <button class="tool-btn" data-tool="weight" title="Weight Tool - Cost 5 (W)">
+                Weight (5)
+            </button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser Tool (E)">
+                Eraser
+            </button>
+        </div>
+
+        <div class="action-buttons">
+            <button id="startBtn" class="btn-primary" title="Start / Stop Visualization (Space)">
+                Visualize
+            </button>
+            <button id="clearPathBtn" class="btn-secondary" title="Clear path while keeping walls (C)">
+                Clear Path
+            </button>
+            <button id="clearBoardBtn" class="btn-subtle" title="Reset all walls, weights and path (R)">
+                Clear Board
+            </button>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Left Panel: Stats and Legend -->
+    <aside class="left-panel glass">
+        <div class="panel-section">
+            <div class="panel-header">
+                <h2>Live Telemetry</h2>
+                <span id="statusBadge" class="status-badge status-idle">Ready</span>
+            </div>
+
+            <div class="stat-card">
+                <span class="stat-label">Visited Nodes</span>
+                <strong id="visited" class="stat-value">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span class="stat-label">Path Length (Steps)</span>
+                <strong id="path" class="stat-value">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span class="stat-label">Total Cost</span>
+                <strong id="cost" class="stat-value">0</strong>
+            </div>
+
+            <div class="stat-card">
+                <span class="stat-label">Execution Time</span>
+                <strong id="time" class="stat-value">0 ms</strong>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="panel-section">
+            <h2>Legend</h2>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span class="color start"></span>
+                    <span>Start Node</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color goal"></span>
+                    <span>Goal Node</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color wall"></span>
+                    <span>Wall (Impassable)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color weight"></span>
+                    <span>Weight (Cost: 5)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color visited"></span>
+                    <span>Visited Node</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color path"></span>
+                    <span>Shortest Path</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Center: Grid Sandbox -->
+    <section class="grid-section">
+        <div class="grid-wrapper glass">
+            <div id="grid" class="grid"></div>
+        </div>
+        <div class="grid-hint">
+            <span>💡 <strong>Tip:</strong> Drag the Start (Green) or Goal (Red) markers to move them. Once path is found, drag anything to preview paths in real-time!</span>
+        </div>
+    </section>
+
+    <!-- Right Panel: Algorithm Deep-Dive & Controls -->
+    <aside class="right-panel glass">
+        <div class="panel-section">
+            <h2>Algorithm Overview</h2>
+            <div id="algorithmInfo" class="algorithm-info-card">
+                <div class="algo-header">
+                    <h3 id="infoTitle">A* Search</h3>
+                    <span id="infoCategory" class="algo-category">Heuristic Search</span>
+                </div>
+
+                <div class="algo-badges">
+                    <div class="badge-item">
+                        <span>Shortest Path:</span>
+                        <strong id="infoGuarantee" class="badge-success">Yes (Optimal)</strong>
+                    </div>
+                    <div class="badge-item">
+                        <span>Weighted:</span>
+                        <strong id="infoWeighted" class="badge-accent">Yes</strong>
+                    </div>
+                </div>
+
+                <div class="algo-complexity">
+                    <code id="infoComplexity">Time: O(E log V) | Space: O(V)</code>
+                </div>
+
+                <p id="infoDescription" class="algo-description">
+                    A* combines the exact cost from the start node (g) with an admissible heuristic estimate to the goal (h).
+                </p>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="panel-section">
+            <h2>Hotkeys &amp; Controls</h2>
+            <ul class="shortcuts-list">
+                <li><kbd>🖱 Left Click</kbd> <span>Draw selected tool</span></li>
+                <li><kbd>🖱 Drag Target</kbd> <span>Reposition Start / Goal</span></li>
+                <li><kbd>🖱 Right Click</kbd> <span>Quick eraser</span></li>
+                <li><kbd>Space</kbd> <span>Start / Stop</span></li>
+                <li><kbd>W</kbd> <span>Toggle Weight (Cost: 5)</span></li>
+                <li><kbd>Q</kbd> / <kbd>E</kbd> <span>Wall / Eraser</span></li>
+                <li><kbd>C</kbd> <span>Clear Path (keep walls)</span></li>
+                <li><kbd>R</kbd> <span>Clear Board (full reset)</span></li>
+            </ul>
+        </div>
+    </aside>
+</main>
+
+<footer>
+    <div class="footer-content">
+        <span>Crafted by <strong>Sviatoslav Bayer</strong></span>
+        <span class="footer-dot">&bull;</span>
+        <span>Vanilla ES6 JavaScript &bull; CSS3 &bull; HTML5</span>
+        <span class="footer-dot">&bull;</span>
+        <span>Open Source MIT</span>
+    </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
